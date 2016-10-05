@@ -6,7 +6,7 @@
  */
 #include <stdio.h>
 #include "ZnpActor.h"
-#include "serialcommunication.h"
+#include "SpiCommunication.h"
 #include "ZnpCommandState.h"
 #include "queue.h"
 #include "universal.h"
@@ -18,7 +18,7 @@
 #include "ZNP_System/Znp_System.h"
 #include "ZNP_Util/Znp_Util.h"
 #include "ZNP_ZDO/Znp_Zdo.h"
-
+#include "wiringPi.h"
 
 ZNPDEVICE stZnpDevice;
 BYTE nZnpDefaultEp = ZNP_DEFAULT_ENDPOINT;
@@ -50,7 +50,8 @@ VOID ZnpWriteSerialCommand(PQUEUECONTENT pCommand)
 {
 	while(ZnpGetState() != ZNP_STATE_ACTIVE)
 		usleep(100);
-	SerialOutput(stZnpDevice.pSerialPort, pCommand->pData, pCommand->nSize);
+	//SerialOutput(stZnpDevice.pSerialPort, pCommand->pData, pCommand->nSize);
+	SpiOutput(stZnpDevice.pSpi, pCommand->pData, pCommand->nSize);
 }
 
 VOID ZnpSetState(BYTE nState, WORD nActiveCommand)
@@ -133,11 +134,11 @@ VOID ZnpStart()
 	}
 }
 
-BOOL ZnpInit(PSERIAL pSerialPort, WORD nStatusUpdateTime)
+BOOL ZnpInit(PSPI pSpi, WORD nStatusUpdateTime)
 {
 	BYTE nTimeout = 0;
 	PQUEUECONTENT pCommandContent;
-	stZnpDevice.pSerialPort = pSerialPort;
+	stZnpDevice.pSpi = pSpi;
 	stZnpDevice.nZnpState = ZNP_STATE_ACTIVE;
 	stZnpDevice.nZdoState = ZNP_ZIGBEE_STATE_HOLD;
 	stZnpDevice.nZnpActiveCommand = 0;

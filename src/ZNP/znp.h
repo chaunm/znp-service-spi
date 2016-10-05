@@ -9,7 +9,7 @@
 #define ZNP_H_
 
 #include "typesdef.h"
-#include "serialcommunication.h"
+#include "SpiCommunication.h"
 
 
 
@@ -36,7 +36,7 @@
 /* define ZNP Command */
 #pragma pack(1)
 typedef struct tagZNPDEVICE {
-	PSERIAL pSerialPort;
+	PSPI	pSpi;
 	IEEEADDRESS IeeeAddr;
 	WORD nShortAddress;
 	BYTE nZnpState;
@@ -88,6 +88,6 @@ IEEEADDRESS ZnpGetIeeeAddr();
 VOID ZnpSetShortAddr(WORD nShortAddr);
 WORD ZnpGetShortAddr();
 BYTE ZnpGetDefaultEp();
-BOOL ZnpInit(PSERIAL pSerialPort, WORD nStatusUpdateTime);
+BOOL ZnpInit(PSPI pSerialPort, WORD nStatusUpdateTime);
 VOID ZnpStateProcess();
 #endif /* ZNP_H_ */

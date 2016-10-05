@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <getopt.h>
-#include "serialcommunication.h"
+#include "SpiCommunication.h"
 #include "znp.h"
 #include "ZnpCommandState.h"
 #include "zcl.h"
@@ -36,11 +36,11 @@ void PrintHelpMenu() {
 int main(int argc, char* argv[])
 {
 
-	pthread_t SerialProcessThread;
-	pthread_t SerialOutputThread;
-	pthread_t SerialHandleThread;
+	pthread_t SpiProcessThread;
+	pthread_t SpiOutputThread;
+	pthread_t SpiHandleThread;
 	//pthread_t DemoActorThread;
-	PSERIAL	pSerialPort;
+	PSPI	pSpi;
 	BOOL bResult = FALSE;
 	BYTE nRetry = 0;
 //	/int SerialThreadErr;
@@ -129,35 +129,36 @@ int main(int argc, char* argv[])
 	char* PortName = malloc(strlen("/dev/") + strlen(SerialPort) + 1);
 	memset(PortName, 0, strlen("/dev/") + strlen(SerialPort) + 1);
 	sprintf(PortName, "%s%s", "/dev/", SerialPort);
-	printf("open port %s\n", PortName);
 	while (bResult == FALSE)
 	{
-		pSerialPort = SerialOpen(PortName, B115200);
-		if (pSerialPort == NULL)
+		//pSerialPort = SerialOpen(PortName, B115200);
+		pSpi = SpiInit();
+		if (pSpi == NULL)
 		{
-			FLUENT_LOGGER_ERROR("serial open failed")
-			printf("Can not open serial port %s, try another port\n", PortName);
+			FLUENT_LOGGER_ERROR("Spi open failed")
+			printf("Can not open Spi port\n");
 			return EXIT_FAILURE;
 		}
 		free(PortName);
 		// Initial Serial port handle process
-		pthread_create(&SerialProcessThread, NULL, (void*)&SerialProcessIncomingData, (void*)pSerialPort);
-		pthread_create(&SerialOutputThread, NULL, (void*)&SerialOutputDataProcess, (void*)pSerialPort);
-		pthread_create(&SerialHandleThread, NULL, (void*)&SerialInputDataProcess, (void*)pSerialPort);
+		pthread_create(&SpiProcessThread, NULL, (void*)&SpiProcessIncomingData, (void*)pSpi);
+		pthread_create(&SpiOutputThread, NULL, (void*)&SpiOutputDataProcess, (void*)pSpi);
+		//pthread_create(&SpiProcessThread, NULL, (void*)&SpiInOut, (void*)pSpi);
+		pthread_create(&SpiHandleThread, NULL, (void*)&SpiInputDataProcess, (void*)pSpi);
 		// init znp device
-		bResult = ZnpInit(pSerialPort, ttl);
+		bResult = ZnpInit(pSpi, ttl);
 		if (bResult == FALSE)
 		{
 			// close serial port to retry
-			pthread_cancel(SerialProcessThread);
-			pthread_cancel(SerialOutputThread);
-			pthread_cancel(SerialHandleThread);
-			SerialClose(pSerialPort);
+			pthread_cancel(SpiProcessThread);
+			pthread_cancel(SpiOutputThread);
+			pthread_cancel(SpiHandleThread);
+			//SerialClose(pSerialPort);
 			nRetry++;
 			if (nRetry == 5)
 			{
 				printf("can not start ZNP after 5 times, exit program\n");
-				LogWrite("Can't not start ZNP apfter 5 times, exit program");
+				LogWrite("Can't not start ZNP after 5 times, exit program");
 				FLUENT_LOGGER_ERROR("Can't start ZNP");
 				ZnpActorPublishZnpStatus("status.offline.znp_start_error");
 				sleep(3);
@@ -181,6 +182,6 @@ int main(int argc, char* argv[])
 		ZnpStateProcess();
 		sleep(1);
 	}
-	SerialClose(pSerialPort);
+	//SerialClose(pSerialPort);
 	return EXIT_SUCCESS;
 }
