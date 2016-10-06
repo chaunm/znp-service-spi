@@ -86,13 +86,13 @@ VOID SpiProcessIncomingData(PSPI pSpi)
 	//while(1)
 	//{
 		while (spiHold == TRUE);
-		if ((sReadyState == 1) && (digitalRead(SRDY_PIN) == LOW))
+		while ((sReadyState == 1) && (digitalRead(SRDY_PIN) == LOW))
 		{
 			spiHold = TRUE;
 			sReadyState = 0;
 			// receive AREQ - set MRDY low then wait for SRDY low
 			digitalWrite(MRDY_PIN, LOW);
-			usleep(10);
+			//usleep(10);
 			// ZNP has AREQ data - send poll command to receive data
 			wiringPiSPIDataRW(0, spiPollCommand, 3);
 			memset(spiPollCommand, 3, 0);
@@ -100,7 +100,7 @@ VOID SpiProcessIncomingData(PSPI pSpi)
 			while (digitalRead(SRDY_PIN) == LOW);
 			sReadyState = 1;
 			// start receive data
-			usleep(100);
+			//usleep(100);
 			g_pReceivePackage[0] = 0xFE;
 			g_nPackageIndex = 1;
 			while(g_nPackageIndex != 0)
@@ -110,14 +110,12 @@ VOID SpiProcessIncomingData(PSPI pSpi)
 				SpiHandleIncomingByte(pSpi, receiveByte);
 			}
 			// reading finish - set MRDY high
-			usleep(1000);
 			digitalWrite(MRDY_PIN, HIGH);
-			printf("SRDY %d \n", digitalRead(SRDY_PIN));
-			while(digitalRead(SRDY_PIN) == LOW);
-			sReadyState = digitalRead(SRDY_PIN);
+			//while(digitalRead(SRDY_PIN) == LOW);
+			//sReadyState = digitalRead(SRDY_PIN);
 			spiHold = FALSE;
 		}
-		usleep(1000);
+		//usleep(1000);
 	//}
 }
 
@@ -146,14 +144,14 @@ void SpiOutputDataProcess(PSPI pSpi)
 				spiHold = TRUE;
 				digitalWrite(MRDY_PIN, LOW);
 				while (digitalRead(SRDY_PIN) == HIGH);
-				usleep(100);
+				//usleep(100);
 				sReadyState = 0;
 				// write request
 				wiringPiSPIDataRW(0, (void*)(stOutputContent.pData + 1), stOutputContent.nSize - 2);
 				memset(stOutputContent.pData, MAX_SERIAL_PACKAGE_SIZE, 0);
 				while (digitalRead(SRDY_PIN) == LOW);
 				sReadyState = 1;
-				usleep(100);
+				// usleep(100);
 				// if a SREQ then read for SRSP
 				if (dataType == 1)
 				{
@@ -166,10 +164,9 @@ void SpiOutputDataProcess(PSPI pSpi)
 						SpiHandleIncomingByte(pSpi, receiveByte);
 					}
 				}
-				usleep(1000);
+				//usleep(1000);
 				digitalWrite(MRDY_PIN, HIGH);
-				printf("SRDY %d \n", digitalRead(SRDY_PIN));
-				while(digitalRead(SRDY_PIN) == LOW);
+				//while(digitalRead(SRDY_PIN) == LOW);
 				spiHold = FALSE;
 				QueueFinishProcBuffer(pSpi->pOutputQueue);
 			}

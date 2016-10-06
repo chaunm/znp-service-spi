@@ -336,7 +336,7 @@ void ZnpActorPublishDeviceAddedEvent(WORD nAddress)
 		epIndexJson = json_string(epString);
 		json_object_set(epJson, "endpoint", epIndexJson);
 		json_decref(epIndexJson);
-		deviceClassJson = DevDesMakeDeviceClassJson(pDevice->pEndpointInfoList[epIndex].nDeviceType,
+		deviceClassJson = DevDesMakeDeviceClassJson(pDevice->pEndpointInfoList[epIndex].nDeviceID,
 				pDevice->pEndpointInfoList[epIndex].nDeviceType);
 		json_object_set(epJson, "class", deviceClassJson);
 		json_decref(deviceClassJson);
