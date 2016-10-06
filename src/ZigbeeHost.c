@@ -125,6 +125,7 @@ int main(int argc, char* argv[])
 	/* Start Znp actor */
 	FLUENT_LOGGER_INFO("znp actor start");
 	ZnpActorStart(&option);
+	sleep(10);
 	/* open serial port and init queue for serial communication */
 	char* PortName = malloc(strlen("/dev/") + strlen(SerialPort) + 1);
 	memset(PortName, 0, strlen("/dev/") + strlen(SerialPort) + 1);
@@ -141,9 +142,9 @@ int main(int argc, char* argv[])
 		}
 		free(PortName);
 		// Initial Serial port handle process
-		pthread_create(&SpiProcessThread, NULL, (void*)&SpiProcessIncomingData, (void*)pSpi);
-		pthread_create(&SpiOutputThread, NULL, (void*)&SpiOutputDataProcess, (void*)pSpi);
-		//pthread_create(&SpiProcessThread, NULL, (void*)&SpiInOut, (void*)pSpi);
+		//pthread_create(&SpiProcessThread, NULL, (void*)&SpiProcessIncomingData, (void*)pSpi);
+		//pthread_create(&SpiOutputThread, NULL, (void*)&SpiOutputDataProcess, (void*)pSpi);
+		pthread_create(&SpiProcessThread, NULL, (void*)&SpiInOut, (void*)pSpi);
 		pthread_create(&SpiHandleThread, NULL, (void*)&SpiInputDataProcess, (void*)pSpi);
 		// init znp device
 		bResult = ZnpInit(pSpi, ttl);
@@ -151,7 +152,7 @@ int main(int argc, char* argv[])
 		{
 			// close serial port to retry
 			pthread_cancel(SpiProcessThread);
-			pthread_cancel(SpiOutputThread);
+			//pthread_cancel(SpiOutputThread);
 			pthread_cancel(SpiHandleThread);
 			//SerialClose(pSerialPort);
 			nRetry++;
