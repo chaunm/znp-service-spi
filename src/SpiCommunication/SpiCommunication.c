@@ -80,99 +80,87 @@ static VOID SpiHandleIncomingByte(PSPI pSpi, BYTE byData)
 	}
 }
 
-VOID SpiProcessIncomingData(PSPI pSpi)
+static VOID SpiProcessIncomingData(PSPI pSpi)
 {
 	BYTE receiveByte;
-	//while(1)
-	//{
-		while (spiHold == TRUE);
-		while ((sReadyState == 1) && (digitalRead(SRDY_PIN) == LOW))
+
+	while (spiHold == TRUE);
+	while ((sReadyState == 1) && (digitalRead(SRDY_PIN) == LOW))
+	{
+		spiHold = TRUE;
+		sReadyState = 0;
+		// receive AREQ - set MRDY low then wait for SRDY low
+		digitalWrite(MRDY_PIN, LOW);
+		// ZNP has AREQ data - send poll command to receive data
+		wiringPiSPIDataRW(0, spiPollCommand, 3);
+		memset(spiPollCommand, 3, 0);
+		// wait for SRDY high
+		while (digitalRead(SRDY_PIN) == LOW);
+		sReadyState = 1;
+		// start receive data
+		g_pReceivePackage[0] = 0xFE;
+		g_nPackageIndex = 1;
+		while(g_nPackageIndex != 0)
 		{
-			spiHold = TRUE;
-			sReadyState = 0;
-			// receive AREQ - set MRDY low then wait for SRDY low
-			digitalWrite(MRDY_PIN, LOW);
-			//usleep(10);
-			// ZNP has AREQ data - send poll command to receive data
-			wiringPiSPIDataRW(0, spiPollCommand, 3);
-			memset(spiPollCommand, 3, 0);
-			// wait for SRDY high
-			while (digitalRead(SRDY_PIN) == LOW);
-			sReadyState = 1;
-			// start receive data
-			//usleep(100);
-			g_pReceivePackage[0] = 0xFE;
-			g_nPackageIndex = 1;
-			while(g_nPackageIndex != 0)
-			{
-				receiveByte = 0;
-				wiringPiSPIDataRW(0, &receiveByte, 1);
-				SpiHandleIncomingByte(pSpi, receiveByte);
-			}
-			// reading finish - set MRDY high
-			digitalWrite(MRDY_PIN, HIGH);
-			//while(digitalRead(SRDY_PIN) == LOW);
-			//sReadyState = digitalRead(SRDY_PIN);
-			spiHold = FALSE;
+			receiveByte = 0;
+			wiringPiSPIDataRW(0, &receiveByte, 1);
+			SpiHandleIncomingByte(pSpi, receiveByte);
 		}
-		//usleep(1000);
-	//}
+		digitalWrite(MRDY_PIN, HIGH);
+		spiHold = FALSE;
+	}
 }
 
-void SpiOutputDataProcess(PSPI pSpi)
+static void SpiOutputDataProcess(PSPI pSpi)
 {
 	QUEUECONTENT stOutputContent;
 	BYTE nIndex;
 	BYTE dataType;
 	BYTE receiveByte;
-	//while(1)
-	//{
-		if (QueueGetState(pSpi->pOutputQueue) == QUEUE_ACTIVE)
+	if (QueueGetState(pSpi->pOutputQueue) == QUEUE_ACTIVE)
+	{
+		stOutputContent = QueueGetContent(pSpi->pOutputQueue);
+		if (stOutputContent.nSize > 0)
 		{
-			stOutputContent = QueueGetContent(pSpi->pOutputQueue);
-			if (stOutputContent.nSize > 0)
+			while(spiHold == TRUE);
+			//print data for debugging purpose
+			printf("<< ");
+			for (nIndex = 0; nIndex < stOutputContent.nSize; nIndex++)
+				printf("0x%02X ", stOutputContent.pData[nIndex]);
+			printf("\n");
+			dataType = (stOutputContent.pData[2] & 0xE0) >> 5;
+			// set MRDY low for starting transfer
+			sReadyState = 1;
+			spiHold = TRUE;
+			digitalWrite(MRDY_PIN, LOW);
+			while (digitalRead(SRDY_PIN) == HIGH);
+			//usleep(100);
+			sReadyState = 0;
+			// write request
+			wiringPiSPIDataRW(0, (void*)(stOutputContent.pData + 1), stOutputContent.nSize - 2);
+			memset(stOutputContent.pData, MAX_SERIAL_PACKAGE_SIZE, 0);
+			while (digitalRead(SRDY_PIN) == LOW);
+			sReadyState = 1;
+			// usleep(100);
+			// if a SREQ then read for SRSP
+			if (dataType == 1)
 			{
-				while(spiHold == TRUE);
-				//print data for debugging purpose
-				printf("<< ");
-				for (nIndex = 0; nIndex < stOutputContent.nSize; nIndex++)
-					printf("0x%02X ", stOutputContent.pData[nIndex]);
-				printf("\n");
-				dataType = (stOutputContent.pData[2] & 0xE0) >> 5;
-				// set MRDY low for starting transfer
-				sReadyState = 1;
-				spiHold = TRUE;
-				digitalWrite(MRDY_PIN, LOW);
-				while (digitalRead(SRDY_PIN) == HIGH);
-				//usleep(100);
-				sReadyState = 0;
-				// write request
-				wiringPiSPIDataRW(0, (void*)(stOutputContent.pData + 1), stOutputContent.nSize - 2);
-				memset(stOutputContent.pData, MAX_SERIAL_PACKAGE_SIZE, 0);
-				while (digitalRead(SRDY_PIN) == LOW);
-				sReadyState = 1;
-				// usleep(100);
-				// if a SREQ then read for SRSP
-				if (dataType == 1)
+				g_pReceivePackage[0] = 0xFE;
+				g_nPackageIndex = 1;
+				while(g_nPackageIndex != 0)
 				{
-					g_pReceivePackage[0] = 0xFE;
-					g_nPackageIndex = 1;
-					while(g_nPackageIndex != 0)
-					{
-						receiveByte = 0;
-						wiringPiSPIDataRW(0, &receiveByte, 1);
-						SpiHandleIncomingByte(pSpi, receiveByte);
-					}
+					receiveByte = 0;
+					wiringPiSPIDataRW(0, &receiveByte, 1);
+					SpiHandleIncomingByte(pSpi, receiveByte);
 				}
-				//usleep(1000);
-				digitalWrite(MRDY_PIN, HIGH);
-				//while(digitalRead(SRDY_PIN) == LOW);
-				spiHold = FALSE;
-				QueueFinishProcBuffer(pSpi->pOutputQueue);
 			}
+			//usleep(1000);
+			digitalWrite(MRDY_PIN, HIGH);
+			//while(digitalRead(SRDY_PIN) == LOW);
+			spiHold = FALSE;
+			QueueFinishProcBuffer(pSpi->pOutputQueue);
 		}
-		usleep(1000);
-	//}
+	}
 }
 
 void SpiInOut(PSPI pSpi)
@@ -181,6 +169,7 @@ void SpiInOut(PSPI pSpi)
 	{
 		SpiProcessIncomingData(pSpi);
 		SpiOutputDataProcess(pSpi);
+		usleep(1000);
 	}
 
 }

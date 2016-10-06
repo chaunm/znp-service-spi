@@ -25,7 +25,6 @@
 void PrintHelpMenu() {
 	printf("program: ZigbeeHostAMA\n"
 			"using ./ZigbeeHostAMA --port [] --id [] --token []\n"
-			"--serial: Serial port used to communicate with ZNP device (ex.: ttyUSB0, ttyAMA0..)\n"
 			"--id: guid of the znp actor\n"
 			"--token: pasword to the broker of the znp actor, this option can be omitted\n"
 			"--host: mqtt server address can be ommitted\n"
@@ -37,20 +36,16 @@ int main(int argc, char* argv[])
 {
 
 	pthread_t SpiProcessThread;
-	pthread_t SpiOutputThread;
 	pthread_t SpiHandleThread;
-	//pthread_t DemoActorThread;
 	PSPI	pSpi;
 	BOOL bResult = FALSE;
 	BYTE nRetry = 0;
-//	/int SerialThreadErr;
 
 	/* get option */
 
 	int opt= 0;
 	char *token = NULL;
 	char *guid = NULL;
-	char *SerialPort = NULL;
 	char *mqttHost = NULL;
 	WORD mqttPort = 0;
 	WORD ttl = 0;
@@ -59,22 +54,18 @@ int main(int argc, char* argv[])
 	static struct option long_options[] = {
 			{"id",      required_argument, 0, 'i' },
 			{"token", 	required_argument, 0, 't' },
-			{"serial",    required_argument, 0, 's' },
 			{"update", 	required_argument, 0, 'u' },
 			{"host", required_argument, 0, 'H'},
 			{"port", required_argument, 0, 'p'}
 	};
 	int long_index;
 	/* Process option */
-	while ((opt = getopt_long(argc, argv,":hi:t:s:u:H:p:",
+	while ((opt = getopt_long(argc, argv,":hi:t:u:H:p:",
 			long_options, &long_index )) != -1) {
 		switch (opt) {
 		case 'h' :
 			PrintHelpMenu();
 			return EXIT_SUCCESS;
-			break;
-		case 's' :
-			SerialPort = StrDup(optarg);
 			break;
 		case 'i':
 			guid = StrDup(optarg);
@@ -102,7 +93,7 @@ int main(int argc, char* argv[])
 			break;
 		}
 	}
-	if ((SerialPort == NULL) || (guid == NULL))
+	if (guid == NULL)
 	{
 		printf("invalid options, using -h for help\n");
 		return EXIT_FAILURE;
@@ -127,12 +118,8 @@ int main(int argc, char* argv[])
 	ZnpActorStart(&option);
 	sleep(10);
 	/* open serial port and init queue for serial communication */
-	char* PortName = malloc(strlen("/dev/") + strlen(SerialPort) + 1);
-	memset(PortName, 0, strlen("/dev/") + strlen(SerialPort) + 1);
-	sprintf(PortName, "%s%s", "/dev/", SerialPort);
 	while (bResult == FALSE)
 	{
-		//pSerialPort = SerialOpen(PortName, B115200);
 		pSpi = SpiInit();
 		if (pSpi == NULL)
 		{
@@ -140,10 +127,6 @@ int main(int argc, char* argv[])
 			printf("Can not open Spi port\n");
 			return EXIT_FAILURE;
 		}
-		free(PortName);
-		// Initial Serial port handle process
-		//pthread_create(&SpiProcessThread, NULL, (void*)&SpiProcessIncomingData, (void*)pSpi);
-		//pthread_create(&SpiOutputThread, NULL, (void*)&SpiOutputDataProcess, (void*)pSpi);
 		pthread_create(&SpiProcessThread, NULL, (void*)&SpiInOut, (void*)pSpi);
 		pthread_create(&SpiHandleThread, NULL, (void*)&SpiInputDataProcess, (void*)pSpi);
 		// init znp device
@@ -183,6 +166,5 @@ int main(int argc, char* argv[])
 		ZnpStateProcess();
 		sleep(1);
 	}
-	//SerialClose(pSerialPort);
 	return EXIT_SUCCESS;
 }
