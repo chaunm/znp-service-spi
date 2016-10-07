@@ -52,8 +52,9 @@ PSPI SpiInit()
 		printf("SPI loaded\n");
 	pSpi->pInputQueue = QueueCreate(SERIAL_QUEUE_SIZE, MAX_SERIAL_PACKAGE_SIZE);
 	pSpi->pOutputQueue = QueueCreate(SERIAL_QUEUE_SIZE, MAX_SERIAL_PACKAGE_SIZE);
-	while (digitalRead(SRDY_PIN) == LOW);
-	sReadyState = digitalRead(SRDY_PIN);
+	//while (digitalRead(SRDY_PIN) == LOW);
+	//sReadyState = digitalRead(SRDY_PIN);
+	sReadyState = 1;
 	spiHold = FALSE;
 	return pSpi;
 }
@@ -97,6 +98,7 @@ static VOID SpiProcessIncomingData(PSPI pSpi)
 		// wait for SRDY high
 		while (digitalRead(SRDY_PIN) == LOW);
 		sReadyState = 1;
+		usleep(10);
 		// start receive data
 		g_pReceivePackage[0] = 0xFE;
 		g_nPackageIndex = 1;
@@ -141,7 +143,7 @@ static void SpiOutputDataProcess(PSPI pSpi)
 			memset(stOutputContent.pData, MAX_SERIAL_PACKAGE_SIZE, 0);
 			while (digitalRead(SRDY_PIN) == LOW);
 			sReadyState = 1;
-			// usleep(100);
+			usleep(10);
 			// if a SREQ then read for SRSP
 			if (dataType == 1)
 			{
