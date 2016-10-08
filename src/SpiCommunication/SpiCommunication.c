@@ -143,7 +143,7 @@ static void SpiOutputDataProcess(PSPI pSpi)
 			memset(stOutputContent.pData, MAX_SERIAL_PACKAGE_SIZE, 0);
 			while (digitalRead(SRDY_PIN) == LOW);
 			sReadyState = 1;
-			usleep(10);
+			usleep(100);
 			// if a SREQ then read for SRSP
 			if (dataType == 1)
 			{
