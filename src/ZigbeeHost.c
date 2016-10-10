@@ -133,11 +133,8 @@ int main(int argc, char* argv[])
 		bResult = ZnpInit(pSpi, ttl);
 		if (bResult == FALSE)
 		{
-			// close serial port to retry
 			pthread_cancel(SpiProcessThread);
-			//pthread_cancel(SpiOutputThread);
 			pthread_cancel(SpiHandleThread);
-			//SerialClose(pSerialPort);
 			nRetry++;
 			if (nRetry == 5)
 			{
