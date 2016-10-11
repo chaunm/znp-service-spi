@@ -311,6 +311,7 @@ void ActorSend(PACTOR pActor, char* topicName, char* message, ACTORCALLBACKFN ca
 		if (jsonHeader != NULL)
 		{
 			jsonId = json_object_get(jsonHeader, "id");
+			printf("Set callback on id %s\n", json_string_value(jsonId));
 			ActorRegisterCallback(pActor, json_string_value(jsonId), callback, CALLBACK_ONCE);
 			json_decref(jsonId);
 			json_decref(jsonHeader);
@@ -351,6 +352,11 @@ void ActorReceive(PACTOR pActor, char* topicName, char* payload)
 		pParamMessage = StrDup(payload);
 		ActorEmitEvent(pActor, topicName, pParamMessage);
 	}
+	// Event processing
+	if (strcmp(TopicNameAct, "event") == 0)
+	{
+		printf("parsing event");
+	}
 	// Primary topic processing
 	if (strcmp(topicName, pActor->guid) == 0)
 	{
@@ -370,7 +376,6 @@ void ActorReceive(PACTOR pActor, char* topicName, char* payload)
 		}
 		// assume that message content is the 2nd json message
 		messageContent = messageSplit[1];
-		puts("Response received");
 		receiveJsonMessage = json_loads(messageContent, JSON_DECODE_ANY, NULL);
 		if (receiveJsonMessage == NULL)
 		{
@@ -419,7 +424,6 @@ void ActorReceive(PACTOR pActor, char* topicName, char* payload)
 				ActorFreeSplitMessage(messageSplit);
 				return;
 			}
-
 			// should check id before get
 			json_t* headerJson = json_object_get(responseJsonReq, "header");
 			if (headerJson == NULL)
@@ -461,23 +465,19 @@ void ActorReceive(PACTOR pActor, char* topicName, char* payload)
 			if (json_is_string(requestIdJson))
 				ActorEmitEvent(pActor, json_string_value(requestIdJson), pParamMessage);
 			json_decref(requestIdJson);
+			json_decref(headerJson);
 			json_decref(responseJsonReq);
-			json_decref(messageTypeJson);
-			json_decref(receiveJsonMessage);
-			ActorFreeSplitMessage(messageSplit);
 		}
 		// parsing action, stop message
 		if (strcmp(json_string_value(messageTypeJson), "action/stop") == 0)
 		{
-			//code for serving stop here
 			ActorOnRequestStop((PVOID)pActor);
 		}
+		json_decref(messageTypeJson);
+		json_decref(receiveJsonMessage);
+		ActorFreeSplitMessage(messageSplit);
 	}
-	// Event processing
-	if (strcmp(TopicNameAct, "event"))
-	{
 
-	}
 	// free allocated memory
 	if (*TopicNameSplit)
 	{
@@ -546,7 +546,7 @@ void ActorOnConnect(struct mosquitto* client, void* context, int result)
 		free(topicName);
 		// listen on its primary topic for response and common request
 		//topicName = ActorMakeTopicName(guid, "/:response");
-		topicName = ActorMakeTopicName(NULL, pActor->guid, NULL);
+		topicName = StrDup(pActor->guid);
 		printf("subscribe to topic %s\n", topicName);
 		mosquitto_subscribe(client, &pActor->DeliveredToken, topicName, QOS);
 		free(topicName);
