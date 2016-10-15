@@ -206,10 +206,11 @@ static void ZnpActorCreat(char* guid, char* psw, char* host, WORD port)
 		printf("Couldn't create actor\n");
 		return;
 	}
-	char* actionTopic = malloc(255);
-	sprintf(actionTopic, "%s%s%s", "action/", guid, "/add_devices");
+	char* actionTopic;
+	actionTopic = ActorMakeTopicName("action/", guid, "/add_devices");
 	ActorRegisterCallback(pZnpActor, actionTopic, ZnpActorOnRequestAddDevice, CALLBACK_RETAIN);
-	sprintf(actionTopic, "%s%s%s", "action/", guid, "/remove_device");
+	free(actionTopic);
+	actionTopic = ActorMakeTopicName("action/", guid, "/remove_device");
 	ActorRegisterCallback(pZnpActor, actionTopic, ZnpActorOnRequestRemoveDevice, CALLBACK_RETAIN);
 	free(actionTopic);
 }
