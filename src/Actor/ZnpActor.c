@@ -98,9 +98,8 @@ static void ZnpActorOnRequestAddDevice(PVOID pParam)
 	json_decref(resultJson);
 	json_object_set(responseJson, "response", statusJson);
 	json_decref(statusJson);
-	responseMessage = json_dumps(responseJson, JSON_INDENT(4) | JSON_REAL_PRECISION(4));
-	//responseTopic = ActorMakeTopicName(header->origin, "/:response");
-	responseTopic = ActorMakeTopicName(NULL, header->origin, NULL);
+	//responseMessage = json_dumps(responseJson, JSON_INDENT(4) | JSON_REAL_PRECISION(4));
+	responseTopic = StrDup(header->origin);
 	ActorFreeHeaderStruct(header);
 	json_decref(responseJson);
 	ActorFreeSplitMessage(znpSplitMessage);
@@ -189,8 +188,8 @@ static void ZnpActorOnRequestRemoveDevice(PVOID pParam)
 	responseMessage = json_dumps(responseJson, JSON_INDENT(4) | JSON_REAL_PRECISION(4));
 	json_decref(responseJson);
 	ActorFreeSplitMessage(znpSplitMessage);
-	//responseTopic = ActorMakeTopicName(header->origin, "/:response");
-	responseTopic = ActorMakeTopicName(NULL, header->origin, NULL);
+	//responseTopic = ActorMakeTopicName(NULL, header->origin, NULL);
+	responseTopic = StrDup(header->origin);
 	ActorFreeHeaderStruct(header);
 	ActorSend(pZnpActor, responseTopic, responseMessage, NULL, FALSE, responseTopic);
 	free(responseMessage);
