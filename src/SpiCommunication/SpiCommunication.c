@@ -94,7 +94,7 @@ static VOID SpiProcessIncomingData(PSPI pSpi)
 		digitalWrite(MRDY_PIN, LOW);
 		// ZNP has AREQ data - send poll command to receive data
 		wiringPiSPIDataRW(0, spiPollCommand, 3);
-		memset(spiPollCommand, 3, 0);
+		memset(spiPollCommand, 0, 3);
 		// wait for SRDY high
 		while (digitalRead(SRDY_PIN) == LOW);
 		sReadyState = 1;
@@ -140,7 +140,7 @@ static void SpiOutputDataProcess(PSPI pSpi)
 			sReadyState = 0;
 			// write request
 			wiringPiSPIDataRW(0, (void*)(stOutputContent.pData + 1), stOutputContent.nSize - 2);
-			memset(stOutputContent.pData, MAX_SERIAL_PACKAGE_SIZE, 0);
+			memset(stOutputContent.pData, 0, MAX_SERIAL_PACKAGE_SIZE);
 			while (digitalRead(SRDY_PIN) == LOW);
 			sReadyState = 1;
 			usleep(100);

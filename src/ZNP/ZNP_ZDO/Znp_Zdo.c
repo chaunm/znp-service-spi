@@ -306,6 +306,20 @@ VOID ZnpZdoProcessIeeeRsp(PZNPPACKAGE pBuffer, BYTE nLength)
 	DeviceSetInformed(pIeeeRsp->nNetworkAddr, pBuffer->nCommand, 0xFF);
 }
 
+VOID ZnpZdoProcessMgmtRtgRsp(PZNPPACKAGE pBuffer, BYTE nLength)
+{
+	BYTE count;
+	PZDOMGMTRTGRSP pRtgMgmtRsp = (PZDOMGMTRTGRSP)(_ZNPCONTENT(pBuffer));
+	printf("Routing entry response\n");
+	printf("Total entries: %d\n", pRtgMgmtRsp->nTotalEntries);
+	printf("Number of entry: %d\n", pRtgMgmtRsp->nEntriesCount);
+	for (count = 0; count < pRtgMgmtRsp->nEntriesCount; count++)
+	{
+		printf("Entry %d, address 0x%04X, status %d:", pRtgMgmtRsp->nStartIndex + count,
+				pRtgMgmtRsp->entriesList[count].nAddress, pRtgMgmtRsp->entriesList[count].nStatus);
+	}
+
+}
 /* Function: ZnpZdoProcessIncomingCommand(PZNPPACKAGE pBuffer, BYTE nLength)
  * Description:
  * 	- Process the Zdo command from ZNP
@@ -348,6 +362,9 @@ VOID ZnpZdoProcessIncomingCommand(PZNPPACKAGE pBuffer, BYTE nLength)
 	case ZDO_PERMIT_JOIN_SESSION_END:
 		printf("Permit join session ended\n");
 		FLUENT_LOGGER_INFO("Permit joint session end");
+		break;
+	case ZDO_MGMT_RTG_RSP:
+		ZnpZdoProcessMgmtRtgRsp(pBuffer, nLength);
 		break;
 	default:
 		break;
