@@ -317,6 +317,10 @@ VOID ZnpZdoProcessMgmtRtgRsp(PZNPPACKAGE pBuffer, BYTE nLength)
 	{
 		printf("Entry %d, address 0x%04X, status %d:", pRtgMgmtRsp->nStartIndex + count,
 				pRtgMgmtRsp->entriesList[count].nAddress, pRtgMgmtRsp->entriesList[count].nStatus);
+		if (pRtgMgmtRsp->entriesList[count].nStatus > 1)
+			DeviceSetTimeoutTime(pRtgMgmtRsp->entriesList[count].nAddress, 1);
+		else
+			DeviceSetTimeoutTime(pRtgMgmtRsp->entriesList[count].nAddress, 1000);
 	}
 
 }
