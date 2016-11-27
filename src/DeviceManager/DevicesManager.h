@@ -16,7 +16,7 @@
 
 #define LQI_LIMIT	10
 
-#define ROUTING_TABLE_CYCLE 	300 // in second
+#define ROUTING_TABLE_CYCLE 	30 // in second
 #pragma pack(1)
 typedef struct tagCLUSTERINFO
 {
