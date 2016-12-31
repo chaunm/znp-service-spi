@@ -451,7 +451,7 @@ void ZnpActorPublishZnpStatus(char* status)
 	char* eventMessage = json_dumps(eventJson, JSON_INDENT(4) | JSON_REAL_PRECISION(4));
 	//char* topicName = ActorMakeTopicName(pZnpActor->guid, "/:event/status");
 	char* topicName = ActorMakeTopicName("event/", "service/world", "/manifest");
-	ActorSend(pZnpActor, topicName, eventMessage, NULL, FALSE, NULL);
+	ActorSend(pZnpActor, topicName, eventMessage, NULL, FALSE, topicName);
 	json_decref(statusJson);
 	//json_decref(paramsJson);
 	json_decref(eventJson);
